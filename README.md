@@ -1,51 +1,69 @@
-#include <iostream>
-#include <string>
-#include <map>
-#include <iomanip>
+import hashlib
+import time
+import sys
+import json
+import urllib.request as urllib2
 
-using namespace std;
+# =====================================================================
+# CONFIGURASI MAINNET ASLI MILKYCHRONOS (MC)
+# =====================================================================
+IP_VPS_ANDA = "202.155.13.221"  
+PORT_SERVER = "80"  # Jalur port 80 standar web, dijamin anti-blokir provider
 
-// 1. ATURAN EKONOMI UTAMA MC (MILK)
-const long long SUPLAI_MAKSIMAL = 50000000; // 50 Juta Koin
-const int BIAYA_TRANSAKSI = 1;               // 1 MILK
+ALAMAT_DOMPET_SAYA = "DOMPET_SAYA_MAINNET_ASLI"
+# =====================================================================
 
-// 2. DATABASE SALDO JARINGAN
-map<string, long long> database_saldo;
+URL_SERVER_MC = f"http://{IP_VPS_ANDA}:{PORT_SERVER}"
 
-// Fungsi untuk melakukan transfer koin MC
-void kirim_aset_mc(string pengirim, string penerima, string penambang, long long jumlah_kirim) {
-    long long total_potongan = jumlah_kirim + BIAYA_TRANSAKSI;
-    
-    cout << "🪐 [MILKYCHRONOS C++ NETWORK] 🪐" << endl;
-    cout << "💸 Kirim : " << jumlah_kirim << " MC" << endl;
-    cout << "⛽ Biaya : " << BIAYA_TRANSAKSI << " MILK -> Dialokasikan ke: " << penambang << endl;
+print("=" * 65)
+print("⛏️  MEMULAI PERANGKAT TAMBANG MILKYCHRONOS (MC) ASLI DI PYDROID 3  ⛏️")
+print(f"💰 Semua hadiah 50 MC akan dicetak ke: {ALAMAT_DOMPET_SAYA}")
+print(f"🌐 Terhubung ke Server Jantung Utama VPS: {URL_SERVER_MC}")
+print("=" * 65)
 
-    // Proteksi Keamanan Matematika C++
-    if (database_saldo[pengirim] < total_potongan) {
-        cout << "❌ Transaksi Ditolak: Saldo MC tidak mencukupi!\n" << endl;
-        return;
-    }
-
-    // Eksekusi Perpindahan Angka di Memori
-    database_saldo[pengirim] -= total_potongan;
-    database_saldo[penerima] += jumlah_kirim;
-    database_saldo[penambang] += BIAYA_TRANSAKSI;
-
-    cout << "🟢 STATUS: TRANSAKSI VALID DAN AMAN (C++)" << endl;
-    cout << "   -> Saldo Akhir Pengirim : " << database_saldo[pengirim] << " MC" << endl;
-    cout << "   -> Saldo Akhir Penerima : " << database_saldo[penerima] << " MC" << endl;
-    cout << "=========================================================" << endl;
-}
-
-int main() {
-    // 3. PREMINE: Mengisi Saldo Awal Anda 10 Juta Koin MC
-    database_saldo["DOMPET_ANDA_CREATOR"] = 10000000;
-
-    cout << "🪙 Selamat Datang di Sistem Inti MilkyChronos (MC)" << endl;
-    cout << "💰 Saldo Dompet Utama Anda: " << database_saldo["DOMPET_ANDA_CREATOR"] << " MC\n" << endl;
-
-    // Simulasi transfer pertama di dalam mesin C++
-    kirim_aset_mc("DOMPET_ANDA_CREATOR", "DOMPET_PENGGUNA_B", "DOMPET_PENAMBANG_A", 250000);
-
-    return 0;
-}
+while True:
+    try:
+        req_job = urllib2.Request(f"{URL_SERVER_MC}/request-mining-job")
+        respon = urllib2.urlopen(req_job, timeout=10)
+        tugas = json.loads(respon.read().decode())
+        
+        target_blok = tugas["target_blok"]
+        hash_sebelumnya = tugas["hash_sebelumnya"]
+        kesulitan = tugas["tingkat_kesulitan"]
+        
+        print(f"🚀 Memulai pencarian kecocokan matematika untuk Blok #{target_blok}...")
+        awalan_sah = "0" * kesulitan
+        nonce = 0
+        waktu_mulai = time.time()
+        
+        while True:
+            teks_kombinasi = f"{target_blok}{hash_sebelumnya}{nonce}{ALAMAT_DOMPET_SAYA}"
+            hash_hasil = hashlib.sha256(teks_kombinasi.encode()).hexdigest()
+            
+            if hash_hasil.startswith(awalan_sah):
+                waktu_habis = round(time.time() - waktu_mulai, 2)
+                print(f"\n🎉 SUKSES BESAR! Menemukan Nonce Valid: {nonce} dalam {waktu_habis} detik!")
+                print(f"✨ Hasil Bukti Kerja Hash SHA-256: {hash_hasil}")
+                
+                data_kirim = json.dumps({"alamat_penambang": ALAMAT_DOMPET_SAYA, "nonce": nonce}).encode('utf-8')
+                req_submit = urllib2.Request(
+                    f"{URL_SERVER_MC}/submit-block", 
+                    data=data_kirim, 
+                    headers={'Content-Type': 'application/json'}
+                )
+                
+                respon_kirim = urllib2.urlopen(req_submit, timeout=10)
+                hasil_vps = json.loads(respon_kirim.read().decode())
+                
+                print(f"📨 Respon Server VPS Indonesia: {hasil_vps['pesan']}")
+                print("=" * 65)
+                time.sleep(3)
+                break
+                
+            nonce += 1
+            if nonce % 100000 == 0:
+                print(f"⏳ Sedang menghitung... Mencoba {nonce:,} kombinasi angka nonce...", end="\r")
+            
+    except Exception as e:
+        print(f"\n🚨 Gangguan jaringan: Gagal kontak dengan server VPS! Periksa IP atau pastikan server MC di VPS sudah menyala. ({e})")
+        time.sleep(10)
