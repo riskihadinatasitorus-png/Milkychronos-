@@ -1,30 +1,53 @@
-# 🪐 MilkyChronos Jaringan Kosmik 🪐
+import time
 
-MilkyChronos adalah proyek mata uang digital eksperimental berbasis Python yang menggabungkan konsep perhitungan waktu bumi (*Chronos*) dengan kelangkaan matematis terdesentralisasi galaksi (*Milky*). 
+# 1. ATURAN MATEMATIKA UTAMA
+SUPLAI_MAKSIMAL = 50000000  # 50 Juta Koin MILK
 
-Proyek ini menggunakan prinsip kelangkaan mutlak dan keamanan kriptografi yang terinspirasi langsung dari cetak biru asli Bitcoin buatan Satoshi Nakamoto.
+# 2. DATABASE UTAMA JARINGAN (Mencatat Saldo Semua Orang)
+# Dompet Anda (pencipta) langsung diisi 10 Juta MILK lewat Premine
+database_saldo = {
+    "DOMPET_ANDA_CREATOR": 10000000,
+    "DOMPET_PENAMBANG_A": 0,
+    "DOMPET_PENAMBANG_B": 0
+}
 
----
+# 3. FUNGSI TRANSFER KOIN (AMAN & TERVALIDASI)
+def kirim_koin_milky(dompet_pengirim, dompet_penerima, jumlah_kirim):
+    print(f"💸 [PERMINTAAN TRANSFER]: {jumlah_kirim:,} MILK dari {dompet_pengirim} ke {dompet_penerima}")
+    
+    # Validasi 1: Cek apakah dompet pengirim terdaftar
+    if dompet_pengirim not in database_saldo:
+        print("❌ Eror: Dompet pengirim tidak valid!")
+        return
 
-## 📊 Spesifikasi Ekonomi (Tokenomics)
+    # Validasi 2: Cek apakah saldo pengirim cukup
+    if database_saldo[dompet_pengirim] < jumlah_kirim:
+        print(f"❌ Eror: Saldo tidak cukup! Saldo Anda hanya {database_saldo[dompet_pengirim]:,} MILK")
+        return
 
-Aturan ekonomi di bawah ini bersifat mengikat, tertulis di dalam kode, dan tidak dapat diubah oleh siapa pun di internet:
+    # Proses Pemotongan dan Penambahan Saldo (Logika Matematika Kripto)
+    database_saldo[dompet_pengirim] -= jumlah_kirim
+    
+    # Jika dompet penerima baru (belum ada di database), daftarkan otomatis
+    if dompet_penerima not in database_saldo:
+        database_saldo[dompet_penerima] = 0
+        
+    database_saldo[dompet_penerima] += jumlah_kirim
+    
+    print("🟢 STATUS TRANSAKSI: 100% SUKSES & SEPAKAT (VALID)")
+    print(f"   -> Saldo Pengirim Sekarang: {database_saldo[dompet_pengirim]:,} MILK")
+    print(f"   -> Saldo Penerima Sekarang: {database_saldo[dompet_penerima]:,} MILK")
+    print("-" * 55)
 
-*   **Nama Koin:** MilkyChronos Coin (`MILK`)
-*   **Suplai Maksimal:** `50.000.000 MILK` (Maksimal 50 Juta koin selamanya)
-*   **Alokasi Pencetakan Awal (Premine):** `10.000.000 MILK` (Hak milik mutlak pencipta proyek)
-*   **Sisa Suplai Ditambang:** `40.000.000 MILK` (Dialokasikan otomatis untuk penambang dunia)
-*   **Hadiah Blok Tambahan:** `50 MILK` per blok transaksi kosmik yang berhasil dipecahkan
+# === SIMULASI JALANNYA TRANSAKSI DI JARRINGAN ===
 
----
+print(f"💰 Saldo Awal Anda: {database_saldo['DOMPET_ANDA_CREATOR']:,} MILK\n")
+time.sleep(1)
 
-## 🔒 Sistem Keamanan Jaringan
+# Uji Coba 1: Anda mengirim 500.000 MILK ke Penambang A (Berhasil)
+kirim_koin_milky("DOMPET_ANDA_CREATOR", "DOMPET_PENAMBANG_A", 500000)
 
-1. **Konsensus Proof-of-Work (PoW):** Komputer di seluruh dunia wajib bersepakat menyelesaikan teka-teki matematika teratur untuk mencatat transaksi secara valid.
-2. **Perlindungan Repositori:** Kode utama dilindungi ketat oleh otentikasi dua langkah (2FA). Orang lain dapat melihat dan menyalin kode ini, tetapi tidak memiliki izin hukum untuk memodifikasi file inti di akun ini.
+time.sleep(1)
 
----
-
-## 📜 Lisensi Hukum
-Proyek ini mengudara secara terbuka (*Open Source*) di internet di bawah naungan **MIT License**. Anda bebas mempelajari, menduplikasi, dan membagikan kode ini selama tetap menghormati hak cipta nama pencipta asli.
-
+# Uji Coba 2: Mencoba kirim 20 Juta MILK (Akan ditolak sistem karena saldo tidak cukup)
+kirim_koin_milky("DOMPET_ANDA_CREATOR", "DOMPET_PENAMBANG_B", 20000000)
