@@ -1,75 +1,125 @@
 from flask import Flask, jsonify
+import threading
 import time
+import random
 
 app = Flask(__name__)
 
-# 1. IDENTITAS RESMI DAN ATURAN EKONOMI MUTLAK MC (MILK)
+# ==========================================
+# KONFIGURASI UTAMA JARINGAN MC (MILK)
+# ==========================================
 NAMA_KOIN = "MilkyChronos"
-TICKER_KOIN = "MC"          # Simbol pasar resmi Anda
-SATUAN_KECIL = "MILK"       # Satuan unit pecahan koin Anda
-SUPLAI_MAKSIMAL = 50000000  # Batas mutlak: 50 Juta MC selamanya
-BIAYA_TRANSAKSI = 1         # Biaya jaringan tetap: 1 MILK per transfer
+TICKER = "MC"
+SATUAN = "MILK"
 
-# 2. DATABASE UTAMA JARINGAN (Menyimpan Saldo Permanen di Server VPS)
-# Akun Anda langsung memegang 10 Juta MC di awal (Premine)
+SUPLAI_MAKSIMAL = 50000000  # Batas mutlak 50 juta koin
+HADIAH_BLOK = 50           # Hadiah tetap 50 MC per blok kosmik
+BIAYA_ADMIN = 1            # Biaya transfer tetap 1 MILK
+
+# ==========================================
+# LEDGER / DATABASE SALDO JARINGAN
+# ==========================================
+# Alokasi pencetakan awal (Premine) 10 Juta MC langsung masuk ke dompet saya
 database_saldo = {
     "DOMPET_ANDA_CREATOR": 10000000,
     "DOMPET_PENAMBANG_A": 0,
-    "DOMPET_PENGGUNA_B": 0
+    "DOMPET_PENAMBANG_B": 0,
+    "DOMPET_PENGGUNA_C": 0
 }
 
-# 3. GERBANG INTERNET 1: Halaman Utama Server
+koin_beredar = 10000000  # Total koin beredar awal di bumi
+blok_terakhir = 0
+catatan_blok = []
+
+# Daftar alamat komputer penambang dunia yang ikut kompetisi
+list_penambang = ["DOMPET_PENAMBANG_A", "DOMPET_PENAMBANG_B", "DOMPET_USA_01", "DOMPET_ASIA_99"]
+
+# ==========================================
+# SYSTEM PENAMBANGAN OTOMATIS (BACKGROUND THREAD)
+# ==========================================
+def penambang_otomatis_loop():
+    global koin_beredar, blok_terakhir
+    
+    while True:
+        # Menunggu waktu jeda blok kosmik (setiap 60 detik)
+        time.sleep(60)
+        
+        # Proteksi agar pencetakan koin tidak bablas melewati 50 juta
+        if koin_beredar + HADIAH_BLOK > SUPLAI_MAKSIMAL:
+            print("INFO: Suplai maksimal 50 juta MC sudah habis tercapai!")
+            break
+            
+        blok_terakhir += 1
+        
+        # Mengacak pemenang kompetisi matematika secara adil
+        pemenang_blok = random.choice(list_penambang)
+        
+        # Daftarkan dompet ke database jika belum ada
+        if pemenang_blok not in database_saldo:
+            database_saldo[pemenang_blok] = 0
+            
+        # Kirim hadiah koin baru dari sistem ke dompet pemenang
+        database_saldo[pemenang_blok] += HADIAH_BLOK
+        koin_beredar += HADIAH_BLOK
+        
+        info_blok = f"Blok #{blok_terakhir} sukses ditambang oleh {pemenang_blok}. Hadiah: {HADIAH_BLOK} MC."
+        catatan_blok.append(info_blok)
+        print(f"[LOG] {info_blok} Total Beredar: {koin_beredar:,} MC")
+
+# ==========================================
+# ENDPOINT API / GERBANG INTERNET JARINGAN
+# ==========================================
+
+# Halaman utama untuk memantau status blockchain MC
 @app.route('/', methods=['GET'])
-def home():
+def index():
     return jsonify({
-        "status": "ONLINE",
-        "pesan": f"Selamat Datang di Jaringan Server Utama {NAMA_KOIN} ({TICKER_KOIN})"
+        "jaringan": NAMA_KOIN,
+        "ticker_resmi": TICKER,
+        "total_koin_beredar": f"{koin_beredar:,} / {SUPLAI_MAKSIMAL:,} {TICKER}",
+        "ketinggian_blok": blok_terakhir,
+        "riwayat_blok_terakhir": catatan_blok[-10:]
     })
 
-# 4. GERBANG INTERNET 2: Cek Saldo Dompet Secara Live
+# Jalur API untuk mengecek saldo dompet secara live
 @app.route('/cek-saldo/<alamat_dompet>', methods=['GET'])
-def cek_saldo(alamat_dompet):
+def cek_saldo_dompet(alamat_dompet):
     saldo = database_saldo.get(alamat_dompet, 0)
     return jsonify({
         "alamat_dompet": alamat_dompet,
-        "saldo_tersedia": f"{saldo:,} {TICKER_KOIN}",
-        "satuan_unit": SATUAN_KECIL
+        "saldo": f"{saldo:,} {TICKER}"
     })
 
-# 5. GERBANG INTERNET 3: Fungsi Kirim Koin via API (Aman & Tervalidasi)
+# Jalur API aman untuk memproses transaksi kirim koin MC
 @app.route('/kirim/<pengirim>/<penerima>/<penambang>/<int:jumlah_kirim>', methods=['POST', 'GET'])
-def kirim_aset_mc(pengirim, penerima, penambang, jumlah_kirim):
-    total_potongan = jumlah_kirim + BIAYA_TRANSAKSI
+def proses_transfer_mc(pengirim, penerima, penambang, jumlah_kirim):
+    total_tagihan = jumlah_kirim + BIAYA_ADMIN
     
-    # Validasi 1: Pastikan pengirim terdaftar di database
     if pengirim not in database_saldo:
-        return jsonify({"status": "GAGAL", "pesan": "Dompet pengirim tidak terdaftar!"})
+        return jsonify({"status": "GAGAL", "pesan": "Alamat pengirim tidak terdaftar!"})
         
-    # Validasi 2: Proteksi Keamanan Matematika (Cek kecukupan saldo + biaya admin)
-    if database_saldo[pengirim] < total_potongan:
-        return jsonify({
-            "status": "GAGAL", 
-            "pesan": f"Saldo {TICKER_KOIN} tidak mencukupi untuk transfer + biaya jaringan!"
-        })
+    if database_saldo[pengirim] < total_tagihan:
+        return jsonify({"status": "GAGAL", "pesan": "Saldo Anda kurang untuk membayar koin + biaya admin!"})
 
-    # Proses Mutasi Saldo Otomatis oleh Sistem Jika Lolos Validasi
-    database_saldo[pengirim] -= total_potongan
+    # Process mutasi angka saldo oleh sistem jaringan
+    database_saldo[pengirim] -= total_tagihan
     
     if penerima not in database_saldo: database_saldo[penerima] = 0
     if penambang not in database_saldo: database_saldo[penambang] = 0
         
     database_saldo[penerima] += jumlah_kirim
-    database_saldo[penambang] += BIAYA_TRANSAKSI
+    database_saldo[penambang] += BIAYA_ADMIN
     
     return jsonify({
         "status": "SUKSES",
-        "pesan": f"Transaksi {jumlah_kirim:,} {TICKER_KOIN} berhasil dikunci ke jaringan",
-        "saldo_pengirim_sekarang": f"{database_saldo[pengirim]:,} {TICKER_KOIN}",
-        "saldo_penerima_sekarang": f"{database_saldo[penerima]:,} {TICKER_KOIN}",
-        "upah_penambang_masuk": f"{BIAYA_TRANSAKSI} {SATUAN_KECIL}"
+        "pesan": f"Transaksi kirim {jumlah_kirim:,} {TICKER} berhasil disetujui.",
+        "saldo_pengirim": f"{database_saldo[pengirim]:,} {TICKER}",
+        "saldo_penerima": f"{database_saldo[penerima]:,} {TICKER}",
+        "fee_penambang": f"{BIAYA_ADMIN} {SATUAN}"
     })
 
 if __name__ == '__main__':
-    # Menyalakan server agar bisa diakses online lewat IP VPS Indonesia Anda
+    # Aktifkan mesin pencetak koin otomatis di thread terpisah agar berjalan simultan
+    threading.Thread(target=penambang_otomatis_loop, daemon=True).start()
+    # Nyalakan server utama jaringan internet MC
     app.run(host='0.0.0.0', port=5000)
-    
