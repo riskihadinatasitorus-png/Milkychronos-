@@ -1,33 +1,54 @@
+import time
 
-# 🪐 MilkyChronos Jaringan Kosmik (`MC`) 🪐
+# 1. IDENTITAS RESMI KOIN KOSMIK
+NAMA_KOIN = "MilkyChronos"
+TICKER_KOIN = "MC"          # Simbol pasar resmi Anda
+SATUAN_KECIL = "MILK"       # Satuan unit pecahan koin Anda
+SUPLAI_MAKSIMAL = 50000000  # Batas mutlak: 50 Juta MC selamanya
 
-Selamat datang di repositori resmi **MilkyChronos**, sebuah proyek mata uang digital eksperimental berbasis Python. Proyek ini memadukan konsep perhitungan waktu bumi (*Chronos*) dengan kelangkaan matematis terdesentralisasi tingkat galaksi (*Milky*).
+# 2. DATABASE SALDO JARINGAN GLOBAL
+database_saldo = {
+    "DOMPET_ANDA_CREATOR": 10000000,  # Anda langsung memegang 10 Juta MC
+    "DOMPET_PENAMBANG_A": 0,
+    "DOMPET_PENGGUNA_B": 0
+}
 
-Sistem ekonomi dan keamanan digital proyek ini dirancang dengan meniru cetak biru legendaris dari Bitcoin buatan Satoshi Nakamoto.
+BIAYA_TRANSAKSI = 1  # Biaya jaringan tetap: 1 MILK per transfer
 
----
+# 3. FUNGSI TRANSFER JARINGAN UTAMA
+def kirim_aset_mc(pengirim, penerima, penambang, jumlah_kirim):
+    total_potongan = jumlah_kirim + BIAYA_TRANSAKSI
+    
+    print(f"🪐 [{NAMA_KOIN.upper()} NETWORK INTERACTIVE] 🪐")
+    print(f"💸 Kirim : {jumlah_kirim:,} {TICKER_KOIN} ({SATUAN_KECIL})")
+    print(f"⛽ Biaya : {BIAYA_TRANSAKSI} {SATUAN_KECIL} -> Dialokasikan ke: {penambang}")
+    
+    # Proteksi Keamanan Matematika
+    if database_saldo[pengirim] < total_potongan:
+        print(f"❌ Transaksi Ditolak: Saldo {TICKER_KOIN} Anda tidak mencukupi untuk biaya admin!\n")
+        return
 
-## 🪙 Informasi Identitas & Ticker Koin
+    # Proses Mutasi Saldo Otomatis oleh Sistem
+    database_saldo[pengirim] -= total_potongan
+    database_saldo[penerima] += jumlah_kirim
+    database_saldo[penambang] += BIAYA_TRANSAKSI
+    
+    print(f"🟢 STATUS: TRANSAKSI VALID DAN TERCATAT")
+    print(f"   -> Saldo Akhir Pengirim : {database_saldo[pengirim]:,} {TICKER_KOIN}")
+    print(f"   -> Saldo Akhir Penerima : {database_saldo[penerima]:,} {TICKER_KOIN}")
+    print(f"   -> Bonus Upah Penambang : {database_saldo[penambang]:,} {SATUAN_KECIL}")
+    print("=" * 65)
 
-*   **Nama Resmi Aset:** MilkyChronos
-*   **Simbol Pasar (Ticker):** `MC`
-*   **Satuan Unit Terkecil:** `MILK`
+# === SIMULASI EKSEKUSI JARINGAN NYATA ===
 
----
+print(f"🪙 Selamat Datang di Sistem Keuangan {NAMA_KOIN} ({TICKER_KOIN})")
+print(f"💰 Saldo Dompet Utama Anda: {database_saldo['DOMPET_ANDA_CREATOR']:,} {TICKER_KOIN}\n")
+time.sleep(1.2)
 
-## 📊 Spesifikasi Ekonomi (Tokenomics) Mutlak
-
-Aturan pasokan di bawah ini dikunci secara absolut di dalam kode `main.py` dan tidak dapat diubah oleh pihak mana pun di internet:
-
-1.  **Suplai Maksimal Global:** `50.000.000 MC` (Maksimal 50 Juta koin selamanya).
-2.  **Pencetakan Awal Pencipta (Premine):** `10.000.000 MC` (Hak milik mutlak dompet kreator untuk modal awal).
-3.  **Sisa Alokasi Penambang:** `40.000.000 MC` (Terkunci di sistem untuk diperebutkan oleh penambang dunia).
-4.  **Biaya Jaringan (Gas Fee):** `1 MILK` per transaksi (Diberikan otomatis sebagai upah komputer penambang yang mencatat transfer).
-
----
-
-## 🔒 Sistem Keamanan & Lisensi Hukum
-
-*   **Proteksi Akses:** Repositori dilindungi dengan verifikasi dua langkah (2FA). Orang lain bebas melihat atau menyalin (*Fork*), tetapi hak mengubah kode inti `main.py` hanya milik kreator asli.
-*   **Lisensi:** Terbuka untuk umum di bawah naungan **MIT License** (Perlindungan hukum bebas tuntutan, persis seperti lisensi Bitcoin).
-*   
+# Simulasi Anda mengirim koin MC pertama Anda
+kirim_aset_mc(
+    pengirim="DOMPET_ANDA_CREATOR", 
+    penerima="DOMPET_PENGGUNA_B", 
+    penambang="DOMPET_PENAMBANG_A", 
+    jumlah_kirim=250000
+)
